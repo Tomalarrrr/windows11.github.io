@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Windows 11 Migration</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  />
+
+  <!-- EmailJS SDK (for sending emails without a backend) -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2.4.1/dist/email.min.js"></script>
+  <!-- ICS.js (for generating ICS calendar files) -->
+  <script src="https://cdn.jsdelivr.net/npm/ics/dist/ics.min.js"></script>
+
+  <style>
+    /* Body & Main Theme */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #ffffff;
+      color: #000000;
+      overflow-x: hidden;
+    }
+
+    /* Floating Icons */
+    .floating-icon {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: #005a9e;
+      opacity: 0.15;
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite alternate;
+      z-index: 1;
+    }
+    .icon-1 { top: 10%; left: 8%; }
+    .icon-2 { top: 40%; left: 85%; animation-delay: 1s; }
+    .icon-3 { top: 70%; left: 15%; animation-delay: 2s; }
+    .icon-4 { top: 85%; left: 70%; animation-delay: 3s; }
+    @keyframes float {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-20px); }
+    }
+
+    /* Header (Windows 11 colors) */
+    header {
+      background: #005a9e;
+      color: #ffffff;
+      text-align: center;
+      padding: 60px 20px;
+      position: relative;
+      z-index: 5;
+    }
+    header h1 { font-size: 2.5rem; font-weight: 700; }
+    header p  { font-size: 1.1rem; }
+
+    /* Navbar */
+    .navbar {
+      background-color: #113e6c;
+      position: relative;
+      z-index: 5;
+    }
+    .navbar .navbar-brand {
+      font-weight: 600;
+      color: #ffffff !important;
+    }
+    .navbar .nav-link { color: #ffffff !important; }
+
+    /* Bubble / Card Style */
+    .bubble {
+      background-color: #f8f8f8;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 30px;
+      position: relative;
+      z-index: 5;
+    }
+
+    /* Calendar & Controls */
+    .calendar-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .month-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #005a9e;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .calendar-day {
+      background-color: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+      min-height: 60px;
+    }
+    .calendar-day:hover {
+      transform: scale(1.03);
+      background-color: #f0f8ff;
+    }
+    .disabled {
+      background-color: #f1f1f1 !important;
+      color: #999999 !important;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* Weekday Labels */
+    .weekday-labels {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #005a9e;
+      text-align: center;
+    }
+    .weekday-label { padding: 5px 0; }
+
+    /* Buttons (Smaller on Mobile) */
+    .btn-primary {
+      background-color: #005a9e !important;
+      border-color: #005a9e !important;
+    }
+    @media (max-width: 768px) {
+      .calendar-controls button {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+      }
+      .calendar-day {
+        min-height: 50px;
+        padding: 6px;
+        font-size: 0.85rem;
+      }
+    }
+
+    /* Footer */
+    footer {
+      background-color: #f0f0f0;
+      color: #333333;
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+      position: relative;
+      z-index: 5;
+    }
+
+    /* Split Section */
+    .split-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .split-section-text { width: 50%; }
+    .split-section-image { width: 50%; }
+    .split-section-image img {
+      width: 100%;
+      border-radius: 8px;
+    }
+    @media (max-width: 768px) {
+      .split-section { flex-direction: column; }
+      .split-section-text, .split-section-image { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating Windows 11 Icons -->
+  <div class="floating-icon icon-1"></div>
+  <div class="floating-icon icon-2"></div>
+  <div class="floating-icon icon-3"></div>
+  <div class="floating-icon icon-4"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Windows 11 Migration</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon" style="color:#fff;"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="#appointment">Appointments</a></li>
+          <li class="nav-item"><a class="nav-link" href="#self-help">Self-Help</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faq">FAQs</a></li>
+          <li class="nav-item"><a class="nav-link" href="#support">Support Tips</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <header>
+    <h1>Welcome to the Windows 11 Migration Portal</h1>
+    <p>Your one-stop solution for a seamless upgrade to Windows 11</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container my-5">
+    <!-- Appointment Section -->
+    <section id="appointment" class="mb-5">
+      <div class="bubble">
+        <h2 class="text-center" style="color:#005a9e;">Book an Appointment</h2>
+        <p class="text-center">Use the calendar below to book a single 20-minute slot.</p>
+
+        <div class="calendar-controls">
+          <button id="prevMonthBtn" class="btn btn-secondary">Prev Month</button>
+          <div class="month-title" id="monthTitle"></div>
+          <button id="nextMonthBtn" class="btn btn-secondary">Next Month</button>
+        </div>
+
+        <div class="weekday-labels">
+          <div class="weekday-label">Mon</div>
+          <div class="weekday-label">Tue</div>
+          <div class="weekday-label">Wed</div>
+          <div class="weekday-label">Thu</div>
+          <div class="weekday-label">Fri</div>
+          <div class="weekday-label" style="color: #999;">Sat</div>
+          <div class="weekday-label" style="color: #999;">Sun</div>
+        </div>
+
+        <div id="calendar" class="calendar-grid"></div>
+
+        <!-- Booking Modal -->
+        <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="bookingModalLabel">Book Your Slot</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form id="bookingForm">
+                  <div class="mb-3">
+                    <label for="bookingDate" class="form-label">Date</label>
+                    <input type="text" class="form-control" id="bookingDate" readonly />
+                  </div>
+                  <div class="mb-3">
+                    <label for="bookingTime" class="form-label">Available Slots</label>
+                    <select class="form-select" id="bookingTime" required></select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="name" class="form-label">Your Name</label>
+                    <input type="text" class="form-control" id="name" required />
+                  </div>
+                  <div class="mb-3">
+                    <label for="email" class="form-label">Your Email</label>
+                    <input type="email" class="form-control" id="email" required />
+                  </div>
+                  <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div><!-- End Booking Modal -->
+      </div>
+    </section>
+
+    <!-- Example Split Section (Text Left / Image Right) -->
+    <section class="mb-5">
+      <div class="bubble split-section">
+        <div class="split-section-text">
+          <h3 style="color:#005a9e;">Windows 11 Tips &amp; Tricks</h3>
+          <p>Make the most of Windows 11 with productivity tips, customization options, and more.</p>
+        </div>
+        <div class="split-section-image">
+          <img
+            src="https://via.placeholder.com/600x400/005a9e/ffffff?text=Windows+11+Tips"
+            alt="Windows 11 Tips"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Self-Help Section -->
+    <section id="self-help" class="mb-5">
+      <div class="bubble">
+        <h2 class="text-center" style="color:#005a9e;">Self-Help Resources</h2>
+        <p class="text-center">Empower yourself with these guides:</p>
+        <p>... (content) ...</p>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="mb-5">
+      <div class="bubble">
+        <h2 class="text-center" style="color:#005a9e;">Pre-Migration FAQs</h2>
+        <p>... (content) ...</p>
+      </div>
+      <div class="bubble">
+        <h2 class="text-center" style="color:#005a9e;">Post-Migration FAQs</h2>
+        <p>... (content) ...</p>
+      </div>
+    </section>
+
+    <!-- Support Section -->
+    <section id="support" class="mb-5">
+      <div class="bubble">
+        <h2 class="text-center" style="color:#005a9e;">Support Tips</h2>
+        <p class="text-center">Maximize your Windows 11 experience:</p>
+        <ul class="list-unstyled text-center">
+          <li><a href="https://halohelpdesk.example.com" target="_blank" class="btn btn-primary mb-3">Halo Help Desk</a></li>
+          <li><a href="https://support.microsoft.com" target="_blank" class="btn btn-primary mb-3">MS Guides and Tips</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 Windows 11 Migration Team. All rights reserved.</p>
+  </footer>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Init EmailJS -->
+  <script>
+    (function(){
+      emailjs.init("YOUR_PUBLIC_KEY"); 
+    })();
+  </script>
+
+  <!-- Calendar + Booking Script -->
+  <script>
+    /* Bank holidays and single-slot tracking */
+    const bankHolidays = ["2025-01-01","2025-04-07","2025-05-01","2025-12-25"];
+    const bookedSlots = {};
+
+    /* Month range: Jan(0) to Jun(5), 2025 */
+    const earliestYear = 2025, earliestMonth = 0;
+    const latestYear = 2025, latestMonth = 5;
+
+    /* DOM references */
+    const calendar = document.getElementById("calendar");
+    const monthTitle = document.getElementById("monthTitle");
+    const prevMonthBtn = document.getElementById("prevMonthBtn");
+    const nextMonthBtn = document.getElementById("nextMonthBtn");
+    const bookingForm = document.getElementById("bookingForm");
+    const bookingDateInput = document.getElementById("bookingDate");
+    const bookingTimeSelect = document.getElementById("bookingTime");
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+
+    /* Today's date logic */
+    let today = new Date();
+    let currentMonth = today.getMonth();
+    let currentYear = today.getFullYear();
+
+    /* Force the calendar within Jan–Jun 2025 range */
+    if (currentYear < earliestYear || (currentYear === earliestYear && currentMonth < earliestMonth)) {
+      currentYear = earliestYear; currentMonth = earliestMonth;
+    }
+    if (currentYear > latestYear || (currentYear === latestYear && currentMonth > latestMonth)) {
+      currentYear = latestYear; currentMonth = latestMonth;
+    }
+
+    /* Month names */
+    const monthNames = ["January","February","March","April","May","June",
+      "July","August","September","October","November","December"
+    ];
+
+    /* Generate 20-min slots from 08:30 to 16:30 */
+    function generateTimeSlots(startTime, endTime, interval) {
+      const slots = [];
+      let [startH, startM] = startTime.split(":").map(Number);
+      const [endH, endM] = endTime.split(":").map(Number);
+
+      while (startH < endH || (startH === endH && startM < endM)) {
+        const slot = `${String(startH).padStart(2,"0")}:${String(startM).padStart(2,"0")}`;
+        slots.push(slot);
+        startM += interval;
+        if (startM >= 60) {
+          startM -= 60;
+          startH++;
+        }
+      }
+      return slots;
+    }
+
+    /* Draw calendar for a given year/month */
+    function drawCalendar(year, month) {
+      calendar.innerHTML = "";
+      monthTitle.textContent = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay(); // 0=Sun,...6=Sat
+      const shift = (firstDay + 6) % 7; // Monday=0,...Sunday=6
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < shift; i++) {
+        const emptyDiv = document.createElement("div");
+        emptyDiv.classList.add("calendar-day","disabled");
+        calendar.appendChild(emptyDiv);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateObj = new Date(year, month, day);
+        const dateStr = dateObj.toISOString().split("T")[0];
+        const dayOfWeek = (dateObj.getDay() + 6) % 7; 
+        const isWeekend = dayOfWeek >= 5;
+        const isHoliday = bankHolidays.includes(dateStr);
+
+        const dayDiv = document.createElement("div");
+        dayDiv.classList.add("calendar-day");
+        dayDiv.textContent = day;
+
+        if (isWeekend || isHoliday) {
+          dayDiv.classList.add("disabled");
+        } else {
+          dayDiv.addEventListener("click", () => openBookingModal(dateStr));
+        }
+        calendar.appendChild(dayDiv);
+      }
+    }
+
+    function openBookingModal(dateStr) {
+      bookingDateInput.value = dateStr;
+      populateTimeSlots(dateStr);
+      const modal = new bootstrap.Modal(document.getElementById("bookingModal"));
+      modal.show();
+    }
+
+    function populateTimeSlots(dateStr) {
+      bookingTimeSelect.innerHTML = "";
+      const slots = generateTimeSlots("08:30","16:30",20);
+
+      slots.forEach(slot => {
+        const key = `${dateStr}T${slot}`;
+        const used = bookedSlots[key] || 0;
+        if (used < 1) {
+          const option = document.createElement("option");
+          option.value = slot;
+          option.textContent = slot;
+          bookingTimeSelect.appendChild(option);
+        }
+      });
+
+      if (!bookingTimeSelect.options.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No available slots";
+        option.disabled = true;
+        bookingTimeSelect.appendChild(option);
+      }
+    }
+
+    /* Booking form submission */
+    bookingForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const date = bookingDateInput.value;
+      const time = bookingTimeSelect.value;
+      const nameVal = nameInput.value.trim();
+      const emailVal = emailInput.value.trim();
+
+      if (!time) {
+        alert("No available slot selected!");
+        return;
+      }
+
+      const key = `${date}T${time}`;
+      bookedSlots[key] = (bookedSlots[key] || 0) + 1;
+
+      alert(`Booking confirmed for ${nameVal} (${emailVal}) on ${date} at ${time}`);
+      drawCalendar(currentYear, currentMonth);
+
+      const modal = bootstrap.Modal.getInstance(document.getElementById("bookingModal"));
+      modal.hide();
+      bookingForm.reset();
+
+      /* 1) Generate ICS for a 20-min meeting using ICS.js */
+      const [year, mon, day] = date.split("-").map(Number);
+      const [hrs, mins] = time.split(":").map(Number);
+      const start = new Date(year, mon - 1, day, hrs, mins);
+      const end = new Date(start.getTime() + 20*60000);
+
+      const cal = ics();
+      cal.addEvent(
+        "Windows 11 Migration Meeting",
+        "Discuss Windows 11 Migration details",
+        "Online / Virtual",
+        start,
+        end
+      );
+      const icsData = cal.build();
+      const icsBase64 = btoa(icsData);
+      const icsAttachment = `data:text/calendar;base64,${icsBase64}`;
+
+      /* 2) Send email with ICS via EmailJS */
+      emailjs.send("YOUR_SERVICE_ID","YOUR_TEMPLATE_ID",{
+        name: nameVal,
+        email: emailVal,
+        date,
+        time,
+        attachment: icsAttachment
+      })
+      .then(() => {
+        console.log("Email with ICS sent successfully!");
+      })
+      .catch(err => {
+        console.error("Error sending ICS email:", err);
+      });
+    });
+
+    /* Prev/Next Month (Jan–Jun 2025 only) */
+    prevMonthBtn.addEventListener("click", () => {
+      if (currentYear === earliestYear && currentMonth === earliestMonth) return;
+      currentMonth--;
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+      if (currentYear < earliestYear || (currentYear === earliestYear && currentMonth < earliestMonth)) {
+        currentYear = earliestYear; currentMonth = earliestMonth;
+      }
+      drawCalendar(currentYear, currentMonth);
+    });
+
+    nextMonthBtn.addEventListener("click", () => {
+      if (currentYear === latestYear && currentMonth === latestMonth) return;
+      currentMonth++;
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      if (currentYear > latestYear || (currentYear === latestYear && currentMonth > latestMonth)) {
+        currentYear = latestYear; currentMonth = latestMonth;
+      }
+      drawCalendar(currentYear, currentMonth);
+    });
+
+    /* On Page Load */
+    drawCalendar(currentYear, currentMonth);
+  </script>
+</body>
+</html>
